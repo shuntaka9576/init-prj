@@ -1,0 +1,55 @@
+{
+  "name": "ts-init",
+  "version": "0.1.0",
+  "bin": {},
+  "scripts": {
+    "build": "webpack",
+    "watch": "tsc -w",
+    "test-unit": "jest unit --runInBand --config jest.config.json",
+    "test-e2e": "dotenv -e ./tests/environments/.env.development -- jest e2e --runInBand --config jest.config.json",
+    "test-e2e-stg": "dotenv -e ./tests/environments/.env.staging -- jest e2e --runInBand --config jest.config.json",
+    "deploy": "cdk deploy",
+    "lint": "eslint './{bin,lib,src,tests}/**/*.{ts,tsx}'",
+    "lint-fix": "eslint --fix './{bin,lib,src,tests}/**/*.{ts,tsx}'"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.24",
+    "@types/source-map-support": "^0.5.0",
+    "@typescript-eslint/eslint-plugin": "^2.12.0",
+    "@typescript-eslint/parser": "^2.12.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.7.0",
+    "eslint-plugin-import": "^2.19.1",
+    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-prettier": "^3.1.2",
+    "husky": "^3.1.0",
+    "jest": "^24.9.0",
+    "lint-staged": "^9.5.0",
+    "prettier": "^1.19.1",
+    "ts-jest": "^24.2.0",
+    "ts-loader": "^6.2.1",
+    "ts-node": "^8.5.4",
+    "typescript": "~3.7.4",
+    "webpack": "^4.41.4",
+    "webpack-cli": "^3.3.10",
+    "webpack-node-externals": "^1.7.2"
+  },
+  "dependencies": {
+    "@types/fs-extra": "^8.0.1",
+    "colors": "^1.4.0",
+    "fs-extra": "^8.1.0",
+    "yargs": "^15.0.2"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "./{bin,lib,src,tests}/**/*.{ts,tsx}": [
+      "yarn lint-fix",
+      "yarn lint",
+      "git add"
+    ]
+  }
+}

@@ -1,10 +1,11 @@
 import * as path from 'path';
+import * as childProcess from 'child_process';
 
 import * as fs from 'fs-extra';
 import * as camelCase from 'camelcase';
 
 import decamelize = require('decamelize');
-import { debug } from './logging';
+import { debug, print, warning } from './logging';
 
 const TEMPLATES_DIR = path.join(__dirname, 'init-templates');
 const INFO_DOT_JSON = 'info.json';
@@ -55,11 +56,7 @@ export class InitTemplate {
     await fs.mkdir(hookTempDirectory);
 
     debug(`sourceDirectory: ${sourceDirectory}`);
-    debug(`hookTempDirectory: ${hookTempDirectory}`);
     debug(`targetDirectory: ${targetDirectory}`);
-    debug(
-      `decamelize: ${decamelize(path.basename(path.resolve(targetDirectory)))}`,
-    );
 
     await this.installFiles(sourceDirectory, targetDirectory, {
       name: decamelize(path.basename(path.resolve(targetDirectory))),
@@ -75,8 +72,6 @@ export class InitTemplate {
     project: ProjectInfo,
   ): Promise<void> {
     for (const file of await fs.readdir(sourceDirectory)) {
-      debug(`file: ${file}`);
-
       const fromFile = path.join(sourceDirectory, file);
       const toFile = path.join(targetDirectory, this.expand(file, project));
 
@@ -91,17 +86,24 @@ export class InitTemplate {
           project,
         );
         continue;
-      } else if (file.match(/^.*\.hook\.(d.)?[^.]+$/)) {
-        await this.installProcessed(
-          fromFile,
-          path.join(targetDirectory, 'tmp', file),
-          project,
-        );
-        continue;
       } else {
         await fs.copy(fromFile, toFile);
       }
     }
+  }
+
+  private expand(template: string, project: ProjectInfo): string {
+    return template
+      .replace(/%name%/g, project.name)
+      .replace(/%name\.camelCased%/g, camelCase(project.name))
+      .replace(
+        /%name\.PascalCased%/g,
+        camelCase(project.name, { pascalCase: true }),
+      )
+      .replace(
+        /%name\.StackName%/g,
+        project.name.replace(/[^A-Za-z0-9-]/g, '-'),
+      );
   }
 
   private async installProcessed(
@@ -112,28 +114,28 @@ export class InitTemplate {
     const template = await fs.readFile(templatePath, { encoding: 'utf-8' });
     await fs.writeFile(toFile, this.expand(template, project));
   }
+}
 
-  private expand(template: string, project: ProjectInfo): string {
-    const MATCH_VER_BUILD = /\+[a-f0-9]+$/; // Matches "+BUILD" in "x.y.z-beta+BUILD"
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const cdkVersion = require('../package.json').version.replace(
-      MATCH_VER_BUILD,
-      '',
-    );
-    return template
-      .replace(/%name%/g, project.name)
-      .replace(/%name\.camelCased%/g, camelCase(project.name))
-      .replace(
-        /%name\.PascalCased%/g,
-        camelCase(project.name, { pascalCase: true }),
-      )
-      .replace(/%cdk-version%/g, cdkVersion)
-      .replace(/%name\.PythonModule%/g, project.name.replace(/-/g, '_'))
-      .replace(
-        /%name\.StackName%/g,
-        project.name.replace(/[^A-Za-z0-9-]/g, '-'),
-      );
-  }
+async function execute(cmd: string, ...args: string[]): Promise<any> {
+  const child = childProcess.spawn(cmd, args, {
+    shell: true,
+    stdio: ['ignore', 'pipe', 'inherit'],
+  });
+  let stdout = '';
+  child.stdout.on('data', chunk => (stdout += chunk.toString()));
+
+  return new Promise<string>((ok, fail) => {
+    child.once('error', err => fail(err));
+    child.once('exit', status => {
+      process.stdout.write(stdout);
+      if (status === 0) {
+        return ok(stdout);
+      } else {
+        process.stderr.write(stdout);
+        return fail(new Error(`${cmd} exited with status ${status}`));
+      }
+    });
+  });
 }
 
 export const availableInitTemplates = async (): Promise<InitTemplate[]> => {
@@ -145,6 +147,69 @@ export const availableInitTemplates = async (): Promise<InitTemplate[]> => {
   return templates;
 };
 
+function isRoot(dir: string): boolean {
+  debug(`path.dirname: ${path.dirname(dir)}, dir: ${dir}`);
+  return path.dirname(dir) === dir;
+}
+
+async function isInGitRepository(dir: string): Promise<boolean | undefined> {
+  const flag = true;
+
+  while (flag) {
+    if (await fs.pathExists(path.join(dir, '.git'))) {
+      return true;
+    }
+    if (isRoot(dir)) {
+      return false;
+    }
+    dir = path.dirname(dir);
+    return undefined;
+  }
+  return undefined;
+}
+
+async function initializeGitRepository(): Promise<void> {
+  if (await isInGitRepository(process.cwd())) {
+    return;
+  }
+  print('Initializing a new git repository...');
+  try {
+    await execute('git', 'init');
+    await execute('git', 'add', '.');
+    await execute(
+      'git',
+      'commit',
+      '--message="Initial commit"',
+      '--no-gpg-sign',
+    );
+  } catch (e) {
+    warning('Unable to initialize git repository for your project.');
+  }
+}
+
+async function postInstallTypescript(canUseNetwork: boolean): Promise<void> {
+  const command = 'yarn';
+
+  if (!canUseNetwork) {
+    return;
+  }
+
+  try {
+    await execute(command, 'install');
+  } catch (e) {
+    throw new Error();
+  }
+}
+async function postInstall(
+  language: string,
+  canUseNetwork: boolean,
+): Promise<void> {
+  switch (language) {
+    case 'typescript':
+      return await postInstallTypescript(canUseNetwork);
+  }
+}
+
 async function initializeProject(
   template: InitTemplate,
   language: string,
@@ -152,10 +217,10 @@ async function initializeProject(
   generateOnly: boolean,
 ): Promise<void> {
   await template.install(language, process.cwd());
-  // if (!generateOnly) {
-  //   await initializeGitRepository();
-  //   await postInstall(language, canUseNetwork);
-  // }
+  if (!generateOnly) {
+    await initializeGitRepository();
+    await postInstall(language, canUseNetwork);
+  }
 }
 
 export async function cliInit(
@@ -163,7 +228,7 @@ export async function cliInit(
   language?: string,
   canUseNetwork = true,
   generateOnly = false,
-) {
+): Promise<void> {
   debug(`type: ${type}`);
   debug(`language: ${language}`);
 

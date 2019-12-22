@@ -1,20 +1,21 @@
 {
   "name": "init-prj",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "init project",
   "license": "MIT",
   "bin": {
     "init-prj": "bin/init-prj"
   },
   "scripts": {
-    "build": "tsc ./bin/init-prj",
+    "build": "tsc",
     "watch": "tsc -w",
     "test-unit": "jest unit --runInBand --config jest.config.json",
     "test-e2e": "dotenv -e ./tests/environments/.env.development -- jest e2e --runInBand --config jest.config.json",
     "test-e2e-stg": "dotenv -e ./tests/environments/.env.staging -- jest e2e --runInBand --config jest.config.json",
     "deploy": "cdk deploy",
     "lint": "eslint './{bin,lib,src,tests}/**/*.{ts,tsx}'",
-    "lint-fix": "eslint --fix './{bin,lib,src,tests}/**/*.{ts,tsx}'"
+    "lint-fix": "eslint --fix './{bin,lib,src,tests}/**/*.{ts,tsx}'",
+    "prepublish": "$(npm bin)/tsc"
   },
   "devDependencies": {
     "@types/jest": "^24.0.24",

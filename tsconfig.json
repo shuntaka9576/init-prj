@@ -26,6 +26,7 @@
     ]
   },
   "exclude": [
-    "cdk.out"
+    "cdk.out",
+    "lib/init-templates"
   ]
 }

@@ -1,7 +1,3 @@
-# CDK asset staging directory
-.cdk.staging
-cdk.out
-
 # node
 *.js
 !jest.config.js

@@ -33,7 +33,7 @@ async function initCommandLine(): Promise<any> {
       case 'init': {
         const language = configuration.settings.get(['language']);
         debug(`language: ${language}`);
-        cliInit(argv.TEMPLATE, language, undefined, false);
+        await cliInit(argv.TEMPLATE, language, undefined, false);
       }
     }
   }

@@ -1,9 +1,13 @@
 {
-  "name": "ts-init",
+  "name": "init-prj",
   "version": "0.1.0",
-  "bin": {},
+  "description": "init project",
+  "license": "MIT",
+  "bin": {
+    "init-prj": "bin/init-prj"
+  },
   "scripts": {
-    "build": "webpack",
+    "build": "tsc ./bin/init-prj",
     "watch": "tsc -w",
     "test-unit": "jest unit --runInBand --config jest.config.json",
     "test-e2e": "dotenv -e ./tests/environments/.env.development -- jest e2e --runInBand --config jest.config.json",

@@ -1,7 +1,8 @@
 import * as yargs from 'yargs';
 
 import { data, debug, error, print, setVerbose, success } from '../lib/logging';
-import { Configuration } from '../lib/settings';
+import { Configuration, Settings } from '../lib/settings';
+import { cliInit } from '../lib/init';
 
 async function parseCommandLineArguments(): Promise<any> {
   return yargs
@@ -16,19 +17,31 @@ async function parseCommandLineArguments(): Promise<any> {
 }
 
 async function initCommandLine(): Promise<any> {
-  const argv = await parseCommandLineArguments();
-  debug(argv);
+  const argv: any = await parseCommandLineArguments();
+  debug(`argv: ${JSON.stringify(argv)}`);
 
-  const config = new Configuration(argv);
-  debug(JSON.stringify(config));
+  const configuration: Configuration = new Configuration(argv);
+  debug(`configuration: ${JSON.stringify(configuration)}`);
+
+  await configuration.load();
 
   async function main(
     command: string,
     args: any,
   ): Promise<number | string | {} | void> {
-    console.log(command, args);
-    return 0;
+    switch (command) {
+      case 'init': {
+        const language = configuration.settings.get(['language']);
+        debug(`language: ${language}`);
+        cliInit(argv.TEMPLATE, language, undefined, false);
+      }
+    }
   }
+
+  const cmd = argv._[0];
+  debug(`cmd: ${JSON.stringify(cmd)}`);
+
+  await main(cmd, argv);
 }
 
 initCommandLine()

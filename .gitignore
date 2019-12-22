@@ -27,3 +27,6 @@ dist
 
 # coverage
 coverage
+
+# other
+tmp

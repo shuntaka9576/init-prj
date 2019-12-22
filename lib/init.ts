@@ -66,7 +66,7 @@ export class InitTemplate {
     });
     // await this.applyFutureFlags(targetDirectory);
     // await this.invokeHooks(hookTempDirectory, targetDirectory);
-    // await fs.remove(hookTempDirectory);
+    await fs.remove(hookTempDirectory);
   }
 
   private async installFiles(

@@ -50,7 +50,6 @@ export class Configuration {
   public readonly defaultConfig = new Settings({
     versionReporting: true,
     pathMetadata: true,
-    output: 'cdk.out',
   });
 
   public async load(): Promise<this> {

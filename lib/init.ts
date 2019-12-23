@@ -7,7 +7,7 @@ import * as camelCase from 'camelcase';
 import decamelize = require('decamelize');
 import { debug, print, warning } from './logging';
 
-const TEMPLATES_DIR = path.join(__dirname, 'init-templates');
+const INIT_TEMPLATES_DIR = path.join(__dirname, 'init-templates');
 const INFO_DOT_JSON = 'info.json';
 
 async function listDirectory(dirPath: string): Promise<string[]> {
@@ -18,30 +18,35 @@ export class InitTemplate {
   public readonly description: string;
   public readonly aliases = new Set<string>();
 
-  public static async fromName(name: string): Promise<InitTemplate> {
-    const basePath = path.join(TEMPLATES_DIR, name);
+  public static async initFromTemplateName(
+    templateName: string,
+  ): Promise<InitTemplate> {
+    const basePath = path.join(INIT_TEMPLATES_DIR, templateName);
     const languages = (await listDirectory(basePath)).filter(
       f => f !== INFO_DOT_JSON,
     );
     const info = await fs.readJson(path.join(basePath, INFO_DOT_JSON));
-    return new InitTemplate(basePath, name, languages, info);
+    return new InitTemplate(basePath, templateName, languages, info);
   }
 
   constructor(
     private readonly basePath: string,
-    public readonly name: string,
+    public readonly templateName: string,
     public readonly languages: string[],
     info: any,
   ) {
     this.description = info.description;
+
     for (const alias of info.aliases || []) {
-      debug(`alias: ${alias}`);
-      this.aliases.add(alias); // TODO ailias入ってない問題
+      this.aliases.add(alias);
     }
   }
 
-  public hasName(name: string): boolean {
-    return name === this.name || this.aliases.has(name);
+  public hasName(aliasTemplateName: string): boolean {
+    return (
+      aliasTemplateName === this.templateName ||
+      this.aliases.has(aliasTemplateName)
+    );
   }
 
   public async install(
@@ -61,8 +66,6 @@ export class InitTemplate {
     await this.installFiles(sourceDirectory, targetDirectory, {
       name: decamelize(path.basename(path.resolve(targetDirectory))),
     });
-    // await this.applyFutureFlags(targetDirectory);
-    // await this.invokeHooks(hookTempDirectory, targetDirectory);
     await fs.remove(hookTempDirectory);
   }
 
@@ -139,11 +142,13 @@ async function execute(cmd: string, ...args: string[]): Promise<any> {
 }
 
 export const availableInitTemplates = async (): Promise<InitTemplate[]> => {
-  const templateNames = await listDirectory(TEMPLATES_DIR);
+  const templateNames = await listDirectory(INIT_TEMPLATES_DIR);
   const templates = new Array<InitTemplate>();
   for (const templateName of templateNames) {
-    templates.push(await InitTemplate.fromName(templateName));
+    templates.push(await InitTemplate.initFromTemplateName(templateName));
   }
+
+  debug(`tempaltes: ${JSON.stringify(templates)}`);
   return templates;
 };
 
@@ -224,18 +229,14 @@ async function initializeProject(
 }
 
 export async function cliInit(
-  type?: string,
+  templateType?: string,
   language?: string,
   canUseNetwork = true,
   generateOnly = false,
 ): Promise<void> {
-  debug(`type: ${type}`);
-  debug(`language: ${language}`);
-
-  type = type || 'default';
-
-  const template = (await availableInitTemplates()).find(t => t.hasName(type!));
-  debug(`template: ${JSON.stringify(template)}`);
+  const template = (await availableInitTemplates()).find(t =>
+    t.hasName(templateType!),
+  );
 
   if (template && language) {
     await initializeProject(template, language, canUseNetwork, generateOnly);
@@ -245,6 +246,5 @@ export async function cliInit(
 }
 
 interface ProjectInfo {
-  /** The value used for %name% */
   readonly name: string;
 }

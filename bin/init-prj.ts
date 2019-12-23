@@ -17,31 +17,19 @@ async function parseCommandLineArguments(): Promise<any> {
 }
 
 async function initCommandLine(): Promise<any> {
-  const argv: any = await parseCommandLineArguments();
-  debug(`argv: ${JSON.stringify(argv)}`);
-
+  const argv = await parseCommandLineArguments();
   const configuration: Configuration = new Configuration(argv);
-  debug(`configuration: ${JSON.stringify(configuration)}`);
-
   await configuration.load();
 
-  async function main(
-    command: string,
-    args: any,
-  ): Promise<number | string | {} | void> {
-    switch (command) {
-      case 'init': {
-        const language = configuration.settings.get(['language']);
-        debug(`language: ${language}`);
-        await cliInit(argv.TEMPLATE, language, undefined, false);
-      }
+  const cmd = argv._[0];
+
+  switch (cmd) {
+    case 'init': {
+      const language = configuration.settings.get(['language']);
+      debug(`language: ${language}`);
+      await cliInit(argv.TEMPLATE, language, undefined, false);
     }
   }
-
-  const cmd = argv._[0];
-  debug(`cmd: ${JSON.stringify(cmd)}`);
-
-  await main(cmd, argv);
 }
 
 initCommandLine()

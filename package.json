@@ -1,10 +1,10 @@
 {
-  "name": "init-prj",
-  "version": "0.1.10",
+  "name": "initemplate",
+  "version": "0.0.0",
   "description": "init project",
   "license": "MIT",
   "bin": {
-    "init-prj": "bin/init-prj.js"
+    "initemplate": "bin/initemplate.js"
   },
   "scripts": {
     "build": "tsc; cp -r ./lib/init-templates ./dist/lib",

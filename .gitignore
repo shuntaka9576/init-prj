@@ -1,6 +1,6 @@
 # node
 *.js
-!/bin/init-prj.js
+!/bin/initemplate.js
 !jest.config.js
 *.d.ts
 !/src/@types/*.d.ts

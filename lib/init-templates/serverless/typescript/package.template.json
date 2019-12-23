@@ -6,8 +6,8 @@
     "build": "webpack",
     "watch": "tsc -w",
     "test-unit": "jest unit --runInBand --config jest.config.json",
-    "test-e2e": "dotenv -e ./tests/environments/.env.development -- jest e2e --runInBand --config jest.config.json",
-    "test-e2e-stg": "dotenv -e ./tests/environments/.env.staging -- jest e2e --runInBand --config jest.config.json",
+    "test-e2e": "jest e2e --runInBand --config jest.config.json",
+    "test-e2e-stg": "jest e2e --runInBand --config jest.config.json",
     "deploy": "cdk deploy",
     "lint": "eslint './{bin,lib,src,tests}/**/*.{ts,tsx}'",
     "lint-fix": "eslint --fix './{bin,lib,src,tests}/**/*.{ts,tsx}'"

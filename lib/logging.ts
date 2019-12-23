@@ -4,7 +4,7 @@ import * as colors from 'colors/safe';
 
 // tslint:disable:no-console the whole point of those methods is precisely to output to the console...
 
-export let isVerbose = true;
+export let isVerbose = false;
 
 export function setVerbose(enabled = true): void {
   isVerbose = enabled;

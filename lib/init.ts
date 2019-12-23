@@ -57,16 +57,10 @@ export class InitTemplate {
       throw new Error(`Unsupported language: ${language}`);
     }
     const sourceDirectory = path.join(this.basePath, language);
-    const hookTempDirectory = path.join(targetDirectory, 'tmp');
-    await fs.mkdir(hookTempDirectory);
-
-    debug(`sourceDirectory: ${sourceDirectory}`);
-    debug(`targetDirectory: ${targetDirectory}`);
 
     await this.installFiles(sourceDirectory, targetDirectory, {
       name: decamelize(path.basename(path.resolve(targetDirectory))),
     });
-    await fs.remove(hookTempDirectory);
   }
 
   private async installFiles(
@@ -119,29 +113,7 @@ export class InitTemplate {
   }
 }
 
-async function execute(cmd: string, ...args: string[]): Promise<any> {
-  const child = childProcess.spawn(cmd, args, {
-    shell: true,
-    stdio: ['ignore', 'pipe', 'inherit'],
-  });
-  let stdout = '';
-  child.stdout.on('data', chunk => (stdout += chunk.toString()));
-
-  return new Promise<string>((ok, fail) => {
-    child.once('error', err => fail(err));
-    child.once('exit', status => {
-      process.stdout.write(stdout);
-      if (status === 0) {
-        return ok(stdout);
-      } else {
-        process.stderr.write(stdout);
-        return fail(new Error(`${cmd} exited with status ${status}`));
-      }
-    });
-  });
-}
-
-export const availableInitTemplates = async (): Promise<InitTemplate[]> => {
+async function availableInitTemplates(): Promise<InitTemplate[]> {
   const templateNames = await listDirectory(INIT_TEMPLATES_DIR);
   const templates = new Array<InitTemplate>();
   for (const templateName of templateNames) {
@@ -150,7 +122,7 @@ export const availableInitTemplates = async (): Promise<InitTemplate[]> => {
 
   debug(`tempaltes: ${JSON.stringify(templates)}`);
   return templates;
-};
+}
 
 function isRoot(dir: string): boolean {
   debug(`path.dirname: ${path.dirname(dir)}, dir: ${dir}`);
@@ -171,6 +143,28 @@ async function isInGitRepository(dir: string): Promise<boolean | undefined> {
     return undefined;
   }
   return undefined;
+}
+
+async function execute(cmd: string, ...args: string[]): Promise<any> {
+  const child = childProcess.spawn(cmd, args, {
+    shell: true,
+    stdio: ['ignore', 'pipe', 'inherit'],
+  });
+  let stdout = '';
+  child.stdout.on('data', chunk => (stdout += chunk.toString()));
+
+  return new Promise<string>((ok, fail) => {
+    child.once('error', err => fail(err));
+    child.once('exit', status => {
+      process.stdout.write(stdout);
+      if (status === 0) {
+        return ok(stdout);
+      } else {
+        process.stderr.write(stdout);
+        return fail(new Error(`${cmd} exited with status ${status}`));
+      }
+    });
+  });
 }
 
 async function initializeGitRepository(): Promise<void> {
@@ -205,6 +199,7 @@ async function postInstallTypescript(canUseNetwork: boolean): Promise<void> {
     throw new Error();
   }
 }
+
 async function postInstall(
   language: string,
   canUseNetwork: boolean,
@@ -222,6 +217,7 @@ async function initializeProject(
   generateOnly: boolean,
 ): Promise<void> {
   await template.install(language, process.cwd());
+
   if (!generateOnly) {
     await initializeGitRepository();
     await postInstall(language, canUseNetwork);

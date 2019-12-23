@@ -7,7 +7,7 @@
       "es2017.object",
       "es2017.string"
     ],
-    "declaration": false,
+    "declaration": true,
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -21,12 +21,13 @@
     "inlineSources": true,
     "experimentalDecorators": true,
     "strictPropertyInitialization":false,
+    "outDir": "dist",
     "typeRoots": [
       "./node_modules/@types"
     ]
   },
   "exclude": [
-    "cdk.out",
-    "lib/init-templates"
+    "lib/init-templates/*/typescript/**/*.ts",
+    "dist/lib/init-templates/*/typescript/**/*.ts"
   ]
 }
